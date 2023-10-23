@@ -197,3 +197,64 @@ it("import non exist error code", async () => {
     expect(e.code).toBe("ERR_MODULE_NOT_FOUND");
   }
 });
+
+it("import.meta.env", () => {
+  import.meta.env.BACON = "yummy";
+  if (import.meta.env.BACON !== "yummy") {
+    throw new Error("import.meta.env is not writable");
+  }
+
+  delete import.meta.env.BACON;
+  if (typeof import.meta.env.BACON !== "undefined") {
+    throw new Error("import.meta.env is not deletable");
+  }
+
+  import.meta.env.BACON = "yummy";
+  if (import.meta.env.BACON !== "yummy") {
+    throw new Error("import.meta.env is not re-writable");
+  }
+  if (!JSON.stringify(import.meta.env)) {
+    throw new Error("import.meta.env is not serializable");
+  }
+
+  import.meta.env["LOL SMILE UTF16 😂"] = "😂";
+  expect(import.meta.env["LOL SMILE UTF16 😂"]).toBe("😂");
+  delete import.meta.env["LOL SMILE UTF16 😂"];
+  expect(import.meta.env["LOL SMILE UTF16 😂"]).toBe(undefined);
+
+  import.meta.env["LOL SMILE latin1 <abc>"] = "<abc>";
+  expect(import.meta.env["LOL SMILE latin1 <abc>"]).toBe("<abc>");
+  delete import.meta.env["LOL SMILE latin1 <abc>"];
+  expect(import.meta.env["LOL SMILE latin1 <abc>"]).toBe(undefined);
+});
+
+it("import.meta.env is spreadable and editable", () => {
+  import.meta.env["LOL SMILE UTF16 😂"] = "😂";
+  const { "LOL SMILE UTF16 😂": lol, ...rest } = import.meta.env;
+  expect(lol).toBe("😂");
+  delete import.meta.env["LOL SMILE UTF16 😂"];
+  expect(rest).toEqual(import.meta.env);
+  expect(import.meta.env).toEqual(import.meta.env);
+});
+
+it("import.meta.env.TZ", () => {
+  var origTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+  // the default timezone is Etc/UTC
+  if (!("TZ" in import.meta.env)) {
+    expect(origTimezone).toBe("Etc/UTC");
+  }
+
+  const realOrigTimezone = origTimezone;
+  if (origTimezone === "America/Anchorage") {
+    origTimezone = "America/New_York";
+  }
+
+  const target = "America/Anchorage";
+  const tzKey = String("TZ" + " ").substring(0, 2);
+  import.meta.env[tzKey] = target;
+  expect(import.meta.env[tzKey]).toBe(target);
+  expect(Intl.DateTimeFormat().resolvedOptions().timeZone).toBe(target);
+  import.meta.env[tzKey] = origTimezone;
+  expect(Intl.DateTimeFormat().resolvedOptions().timeZone).toBe(realOrigTimezone);
+});
