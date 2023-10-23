@@ -354,9 +354,9 @@ Zig::ImportMetaObject* ImportMetaObject::create(JSC::VM& vm, JSC::JSGlobalObject
     ptr->finishCreation(vm);
     return ptr;
 }
-Zig::ImportMetaObject* ImportMetaObject::create(JSC::JSGlobalObject* jslobalObject, JSC::JSString* keyString)
+Zig::ImportMetaObject* ImportMetaObject::create(JSC::JSGlobalObject* globalObject, JSC::JSString* keyString)
 {
-    auto* globalObject = jsCast<Zig::GlobalObject*>(jslobalObject);
+    auto* globalObject = jsCast<Zig::GlobalObject*>(globalObject);
     auto& vm = globalObject->vm();
     auto view = keyString->value(globalObject);
     JSC::Structure* structure = globalObject->ImportMetaObjectStructure();
@@ -403,6 +403,11 @@ JSC_DEFINE_CUSTOM_GETTER(jsImportMetaObjectGetter_require, (JSGlobalObject * glo
 
     return JSValue::encode(thisObject->requireProperty.getInitializedOnMainThread(thisObject));
 }
+static JSValue constructEnv(JSC::VM& vm, JSC::JSGlobalObject* globalObject)
+{
+    auto* globalObject = jsCast<Zig::GlobalObject*>(globalObject);
+    return globalObject->processEnvObject();
+}
 
 static const HashTableValue ImportMetaObjectPrototypeValues[] = {
     { "resolve"_s, static_cast<unsigned>(JSC::PropertyAttribute::Function | PropertyAttribute::DontDelete), NoIntrinsic, { HashTableValue::NativeFunctionType, functionImportMeta__resolve, 0 } },
@@ -412,6 +417,7 @@ static const HashTableValue ImportMetaObjectPrototypeValues[] = {
     { "file"_s, static_cast<unsigned>(JSC::PropertyAttribute::ReadOnly | JSC::PropertyAttribute::CustomAccessor | PropertyAttribute::DontDelete), NoIntrinsic, { HashTableValue::GetterSetterType, jsImportMetaObjectGetter_file, 0 } },
     { "path"_s, static_cast<unsigned>(JSC::PropertyAttribute::ReadOnly | JSC::PropertyAttribute::CustomAccessor | PropertyAttribute::DontDelete), NoIntrinsic, { HashTableValue::GetterSetterType, jsImportMetaObjectGetter_path, 0 } },
     { "require"_s, static_cast<unsigned>(JSC::PropertyAttribute::ReadOnly | JSC::PropertyAttribute::CustomAccessor | PropertyAttribute::DontDelete), NoIntrinsic, { HashTableValue::GetterSetterType, jsImportMetaObjectGetter_require, 0 } },
+    { "env"_s, static_cast<unsigned>(JSC::PropertyAttribute::PropertyCallback), NoIntrinsic, { HashTableValue::LazyPropertyType, constructEnv } },
 };
 
 class ImportMetaObjectPrototype final : public JSC::JSNonFinalObject {
